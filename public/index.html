@@ -1,0 +1,72 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClearRoute - Window Cleaning Business Management</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Theme color -->
+  <meta name="theme-color" content="#2563EB" />
+  
+  <!-- iOS specific -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ClearRoute" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+  
+  <!-- Microsoft -->
+  <meta name="msapplication-TileColor" content="#2563EB" />
+  <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+  
+  <!-- Splash screens for iOS -->
+  <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" media="(device-width: 390px) and (-webkit-device-pixel-ratio: 3)" />
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%); }
+    .card-gradient { background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); }
+    .stat-card { transition: all 0.3s ease; }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+    .nav-item { transition: all 0.2s ease; }
+    .nav-item:hover { background: rgba(255,255,255,0.1); }
+    .nav-item.active { background: rgba(59, 130, 246, 0.2); border-left: 3px solid #3b82f6; }
+    .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+    .input-field { transition: all 0.2s ease; }
+    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade { animation: fadeIn 0.4s ease forwards; }
+    .table-row-hover:hover { background-color: #f8fafc; }
+    .status-paid { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+    .status-sent { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    .status-overdue { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    .status-draft { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
+    
+    /* Prevent pull-to-refresh on PWA */
+    html { overscroll-behavior: none; }
+    
+    /* Prevent double-tap zoom */
+    button, a, input { touch-action: manipulation; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <!-- App will mount here -->
+  <div id="root"></div>
+  
+  <script>
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW registered'))
+          .catch(err => console.log('SW failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
