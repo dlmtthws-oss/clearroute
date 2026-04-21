@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClearRoute - Business Plan</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 40px; }
+        h1 { font-size: 42px; color: #2563eb; margin-bottom: 10px; }
+        h2 { font-size: 28px; color: #1e40af; margin: 40px 0 20px; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+        h3 { font-size: 20px; color: #1d4ed8; margin: 25px 0 12px; }
+        p { margin-bottom: 15px; }
+        ul { margin-left: 25px; margin-bottom: 20px; }
+        li { margin-bottom: 8px; }
+        .tagline { font-size: 24px; color: #64748b; margin-bottom: 30px; }
+        .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .feature { background: #f8fafc; padding: 12px 15px; border-radius: 8px; border-left: 3px solid #2563eb; }
+        .feature strong { color: #2563eb; }
+        .comparison-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .comparison-table th, .comparison-table td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        .comparison-table th { background: #2563eb; color: white; }
+        .comparison-table tr:nth-child(even) { background: #f8fafc; }
+        .check { color: #16a34a; }
+        .cross { color: #dc2626; }
+        .pricing-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .pricing-table th, .pricing-table td { border: 1px solid #e2e8f0; padding: 15px; text-align: center; }
+        .pricing-table th { background: #1e40af; color: white; font-size: 18px; }
+        .pricing-table td { font-size: 24px; font-weight: bold; color: #2563eb; }
+        .usps { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; padding: 25px; border-radius: 12px; margin: 30px 0; }
+        .usps h3 { color: white; border: none; margin-top: 0; }
+        .usps li { color: white; }
+        .value-prop { background: #fef3c7; padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #f59e0b; }
+        .value-prop p { font-size: 20px; font-weight: 500; margin: 0; }
+        .projections { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 20px 0; }
+        .projection { background: #f0fdf4; padding: 15px; border-radius: 8px; text-align: center; }
+        .projection .num { font-size: 28px; font-weight: bold; color: #16a34a; }
+        .projection .label { font-size: 14px; color: #64748b; }
+        .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; }
+        @media print { body { padding: 20px; } }
+    </style>
+</head>
+<body>
+
+<h1>ClearRoute</h1>
+<p class="tagline">The UK's Smartest Window Cleaning Software</p>
+
+<h2>The Problem</h2>
+<p>Window cleaning businesses struggle with:</p>
+<ul>
+    <li>Manual route planning taking hours each week</li>
+    <li>Missed jobs and double-booking customers</li>
+    <li>Chasing payments and managing invoices</li>
+    <li>No visibility into business performance</li>
+    <li>Disorganized customer records</li>
+    <li>Time-consuming quotes and estimates</li>
+</ul>
+
+<h2>Our Solution</h2>
+<p>ClearRoute is an all-in-one SaaS platform that automates your entire window cleaning operation.</p>
+
+<h2>Key Features</h2>
+<div class="features-grid">
+    <div class="feature"><strong>Route Management</strong><br>Auto-build routes, Google Maps, AI optimization</div>
+    <div class="feature"><strong>Customer CRM</strong><br>Full history, Companies House lookup, portal</div>
+    <div class="feature"><strong>Job Tracking</strong><br>One-click jobs, photos, completion tracking</div>
+    <div class="feature"><strong>Invoicing</strong><br>PDF invoices, Stripe, Direct Debit</div>
+    <div class="feature"><strong>Quotes</strong><br>Quick builder, PDF export, email</div>
+    <div class="feature"><strong>Reports</strong><br>P&L, VAT Returns, cash flow</div>
+    <div class="feature"><strong>Integrations</strong><br>Xero, QuickBooks, HMRC MTD</div>
+    <div class="feature"><strong>AI Features</strong><br>Route optimization, forecasting, insights</div>
+    <div class="feature"><strong>Team Management</strong><br>Roles, permissions, performance</div>
+    <div class="feature"><strong>Bank Feeds</strong><br>TrueLayer integration (free)</div>
+</div>
+
+<h2>AI Features (Claude-powered)</h2>
+<ul>
+    <li>Smart route optimization</li>
+    <li>Cash flow forecasting</li>
+    <li>Customer health scoring</li>
+    <li>Churn prediction</li>
+    <li>Anomaly detection</li>
+    <li>Business insights copilot</li>
+    <li>Automated communications</li>
+    <li>Invoice writing assistant</li>
+    <li>Expense categorization</li>
+    <li>Smart scheduling</li>
+</ul>
+
+<h2>Market Comparison</h2>
+<table class="comparison-table">
+    <tr>
+        <th>Feature</th>
+        <th>ClearRoute</th>
+        <th>Jobber</th>
+        <th>Housecall Pro</th>
+    </tr>
+    <tr>
+        <td>AI Optimization</td>
+        <td class="check">✓</td>
+        <td class="cross">✗</td>
+        <td class="cross">✗</td>
+    </tr>
+    <tr>
+        <td>Route Planning</td>
+        <td class="check">✓</td>
+        <td class="check">✓</td>
+        <td class="check">✓</td>
+    </tr>
+    <tr>
+        <td>Invoicing</td>
+        <td class="check">✓</td>
+        <td class="check">✓</td>
+        <td class="check">✓</td>
+    </tr>
+    <tr>
+        <td>Direct Debit</td>
+        <td class="check">✓</td>
+        <td>£20/mo</td>
+        <td>£25/mo</td>
+    </tr>
+    <tr>
+        <td>Bank Feeds</td>
+        <td class="check">✓</td>
+        <td class="cross">✗</td>
+        <td class="cross">✗</td>
+    </tr>
+    <tr>
+        <td>VAT Returns (MTD)</td>
+        <td class="check">✓</td>
+        <td class="cross">✗</td>
+        <td class="cross">✗</td>
+    </tr>
+    <tr>
+        <td>Starting Price</td>
+        <td>£29/mo</td>
+        <td>£49/mo</td>
+        <td>£49/mo</td>
+    </tr>
+</table>
+
+<h2>Pricing</h2>
+<table class="pricing-table">
+    <tr>
+        <th>Starter</th>
+        <th>Pro</th>
+        <th>Business</th>
+        <th>Enterprise</th>
+    </tr>
+    <tr>
+        <td>£29/mo</td>
+        <td>£79/mo</td>
+        <td>£149/mo</td>
+        <td>£299/mo</td>
+    </tr>
+    <tr>
+        <td>Solo cleaner</td>
+        <td>1-3 cleaners</td>
+        <td>4-10 cleaners</td>
+        <td>10+ cleaners</td>
+    </tr>
+</table>
+
+<div class="usps">
+    <h3>Why ClearRoute Wins</h3>
+    <ul>
+        <li>✓ Only UK window cleaning SaaS with AI</li>
+        <li>✓ Free bank feeds (TrueLayer value: £10/mo)</li>
+        <li>✓ Built-in Direct Debit (save £240/yr)</li>
+        <li>✓ HMRC MTD compliant</li>
+        <li>✓ Xero/QuickBooks sync included</li>
+        <li>✓ Customer portal included</li>
+    </ul>
+</div>
+
+<div class="value-prop">
+    <p>"ClearRoute saves window cleaners 10+ hours per week on admin, gets paid 50% faster, and helps you grow without hiring more office staff."</p>
+</div>
+
+<h2>Target Market</h2>
+<ul>
+    <li>Window cleaners (UK primary)</li>
+    <li>Pressure washers</li>
+    <li>Gutter cleaners</li>
+    <li>Solar panel cleaners</li>
+    <li>Commercial facade cleaners</li>
+</ul>
+
+<h2>Revenue Projections (Year 1)</h2>
+<div class="projections">
+    <div class="projection">
+        <div class="num">20</div>
+        <div class="label">Customers</div>
+        <div>£1,560/mo</div>
+    </div>
+    <div class="projection">
+        <div class="num">50</div>
+        <div class="label">Customers</div>
+        <div>£3,950/mo</div>
+    </div>
+    <div class="projection">
+        <div class="num">100</div>
+        <div class="label">Customers</div>
+        <div>£7,900/mo</div>
+    </div>
+    <div class="projection">
+        <div class="num">200</div>
+        <div class="label">Customers</div>
+        <div>£15,800/mo</div>
+    </div>
+</div>
+
+<h2>Year 1 Target: £29,210 ARR</h2>
+
+<div class="footer">
+    <p><strong>ClearRoute</strong> - Built with React, Supabase, Tailwind CSS & Claude AI</p>
+    <p>Website: clearroute.app | Email: hello@clearroute.app</p>
+    <p>© 2026 ClearRoute</p>
+</div>
+
+</body>
+</html>
