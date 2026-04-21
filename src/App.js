@@ -42,6 +42,8 @@ const CustomerHealth = lazy(() => import('./pages/CustomerHealth'));
 const CommunicationsCentre = lazy(() => import('./pages/CommunicationsCentre'));
 const BusinessInsights = lazy(() => import('./pages/BusinessInsights'));
 const AnomalyManagement = lazy(() => import('./pages/AnomalyManagement'));
+const Legal = lazy(() => import('./pages/Legal'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 
 function PageLoading() {
   return (
@@ -164,6 +166,8 @@ function App() {
               <Route path="/scheduling" element={<SmartScheduling user={user} />} />
               <Route path="/cashflow" element={<CashFlowForecast user={user} />} />
               <Route path="/communications" element={<CommunicationsCentre user={user} />} />
+              <Route path="/legal" element={<Legal />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="/customers/health" element={<CustomerHealth user={user} />} />
               <Route path="/workers" element={<Workers />} />
               <Route path="/settings" element={<Settings />} />
