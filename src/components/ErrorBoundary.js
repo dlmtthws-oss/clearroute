@@ -1,5 +1,4 @@
 import { Component } from 'react';
-import { useNavigate } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 
 class ErrorBoundaryContent extends Component {
@@ -78,18 +77,15 @@ class ErrorBoundaryContent extends Component {
 }
 
 function ErrorBoundary({ children, user }) {
-  let navigate;
-  try {
-    navigate = useNavigate();
-  } catch (e) {
-    navigate = (path) => window.location.href = path;
-  }
-  
   return (
-    <ErrorBoundaryContent user={user} currentRoute={window.location.pathname} navigate={navigate}>
+    <ErrorBoundaryContent user={user} currentRoute={window.location.pathname} navigate={navigate ? navigate : ((path) => window.location.href = path)}>
       {children}
     </ErrorBoundaryContent>
   );
 }
 
 export default ErrorBoundary;
+
+function navigate(path) {
+  window.location.href = path;
+}
