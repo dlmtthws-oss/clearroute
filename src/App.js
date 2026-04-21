@@ -40,6 +40,7 @@ const CashFlowForecast = lazy(() => import('./pages/CashFlowForecast'));
 const SmartScheduling = lazy(() => import('./pages/SmartScheduling'));
 const CustomerHealth = lazy(() => import('./pages/CustomerHealth'));
 const CommunicationsCentre = lazy(() => import('./pages/CommunicationsCentre'));
+const InviteUsers = lazy(() => import('./pages/InviteUsers'));
 const BusinessInsights = lazy(() => import('./pages/BusinessInsights'));
 const AnomalyManagement = lazy(() => import('./pages/AnomalyManagement'));
 const Legal = lazy(() => import('./pages/Legal'));
@@ -171,6 +172,7 @@ function App() {
               <Route path="/customers/health" element={<CustomerHealth user={user} />} />
               <Route path="/workers" element={<Workers />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/invite" element={<InviteUsers user={user} onClose={() => navigate('/settings')} />} />
               <Route path="/settings/audit-log" element={<AuditLog />} />
               <Route path="/settings/quickbooks-callback" element={<QuickBooksCallback />} />
               <Route path="/accounting/bank-feed" element={<BankFeed />} />
