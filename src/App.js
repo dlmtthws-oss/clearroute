@@ -162,6 +162,9 @@ function App() {
               <Route path="/reports" element={<Reports user={user} />} />
               <Route path="/reports/vat" element={<VATReturnReport user={user} />} />
               <Route path="/scheduling" element={<SmartScheduling user={user} />} />
+              <Route path="/cashflow" element={<CashFlowForecast user={user} />} />
+              <Route path="/communications" element={<CommunicationsCentre user={user} />} />
+              <Route path="/customers/health" element={<CustomerHealth user={user} />} />
               <Route path="/workers" element={<Workers />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/settings/audit-log" element={<AuditLog />} />
