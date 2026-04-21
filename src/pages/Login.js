@@ -4,12 +4,21 @@ import { supabase } from '../lib/supabase'
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isRegister, setIsRegister] = useState(false)
   const [loginAs, setLoginAs] = useState('admin')
   const [workers, setWorkers] = useState([])
   const [selectedWorker, setSelectedWorker] = useState('')
+  const INVITE_ONLY = true // Set to false to open registration
+
+  // Hardcode to prevent signups when invite-only
+  useEffect(() => {
+    if (INVITE_ONLY) {
+      setIsRegister(false)
+    }
+  }, [])
 
   useEffect(() => {
     loadWorkers()
@@ -170,7 +179,7 @@ export default function Login({ onLogin }) {
           </button>
         </form>
 
-        {loginAs === 'admin' && (
+        {loginAs === 'admin' && !INVITE_ONLY && (
           <div className="mt-6 text-center">
             <button
               onClick={() => setIsRegister(!isRegister)}
@@ -179,6 +188,13 @@ export default function Login({ onLogin }) {
             >
               {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>
+          </div>
+        )}
+
+        {INVITE_ONLY && loginAs === 'admin' && (
+          <div className="mt-6 text-center text-sm text-gray-600 p-3 bg-gray-50 rounded">
+            <p>🔒 Invitation-only access</p>
+            <p className="text-xs mt-1">Contact admin@clearroute.co.uk for access</p>
           </div>
         )}
 
