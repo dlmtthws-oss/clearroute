@@ -171,7 +171,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/customers/health" element={<CustomerHealth user={user} />} />
               <Route path="/workers" element={<Workers />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={<Settings user={user} />} />
               <Route path="/invite" element={<InviteUsers user={user} onClose={() => navigate('/settings')} />} />
               <Route path="/settings/audit-log" element={<AuditLog />} />
               <Route path="/settings/quickbooks-callback" element={<QuickBooksCallback />} />
