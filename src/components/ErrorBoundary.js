@@ -78,7 +78,12 @@ class ErrorBoundaryContent extends Component {
 }
 
 function ErrorBoundary({ children, user }) {
-  const navigate = useNavigate();
+  let navigate;
+  try {
+    navigate = useNavigate();
+  } catch (e) {
+    navigate = (path) => window.location.href = path;
+  }
   
   return (
     <ErrorBoundaryContent user={user} currentRoute={window.location.pathname} navigate={navigate}>
