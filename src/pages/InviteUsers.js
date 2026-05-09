@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
-export default function InviteUsers({ user, onClose }) {
+export default function InviteUsers({ user }) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('worker');
   const [sending, setSending] = useState(false);
@@ -28,8 +30,6 @@ export default function InviteUsers({ user, onClose }) {
 
       if (inviteError) throw inviteError;
 
-      // Note: In production, you'd send an actual email here
-      // For now, show the invite code
       setSent(true);
     } catch (err) {
       setError(err.message);
@@ -50,7 +50,7 @@ export default function InviteUsers({ user, onClose }) {
           Role: {role}
         </p>
         <button
-          onClick={onClose}
+          onClick={() => navigate('/settings')}
           className="mt-4 btn btn-primary"
         >
           Close
@@ -102,7 +102,7 @@ export default function InviteUsers({ user, onClose }) {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => navigate('/settings')}
             className="flex-1 btn btn-secondary"
           >
             Cancel
