@@ -55,7 +55,7 @@ Remove-NetFireWallRule -DisplayName $FirewallRuleName -ErrorAction SilentlyConti
 
 # Add port-proxy rules
 foreach ($p in $Ports) {
-    Write-Host "  Forwarding 0.0.0.0:$($p.Port) -> $WslIp:$($p.Port)  ($($p.Desc))"
+    Write-Host "  Forwarding 0.0.0.0:$($p.Port) -> $($WslIp):$($p.Port)  ($($p.Desc))"
     netsh interface portproxy add v4tov4 `
         listenport=$($p.Port) listenaddress=0.0.0.0 `
         connectport=$($p.Port) connectaddress=$WslIp
