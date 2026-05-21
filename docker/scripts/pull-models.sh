@@ -19,13 +19,13 @@ echo "    (This may take a while on first run — models are several GB each)"
 echo ""
 
 # ── General chat / agent models ──────────────────────────────
-# Adjust to match your available RAM:
-#   16 GB RAM → use :7b variants
-#   32 GB RAM → use :14b variants (recommended)
-#   64 GB RAM → use :32b variants
+# NUCBOX M5 Ultra — 32 GB RAM config:
+#   qwen2.5:32b  main workhorse model (~20 GB)
+#   qwen3:14b    reasoning/thinking mode (~9 GB)
+# Only one large model runs at a time; Ollama unloads idle models.
 
-echo "--- Pulling qwen2.5:14b (recommended upgrade from smaller Qwen) ---"
-docker exec "$CONTAINER" ollama pull qwen2.5:14b
+echo "--- Pulling qwen2.5:32b (32 GB RAM upgrade — main workhorse model) ---"
+docker exec "$CONTAINER" ollama pull qwen2.5:32b
 
 echo "--- Pulling qwen3:14b (latest Qwen with thinking/reasoning mode) ---"
 docker exec "$CONTAINER" ollama pull qwen3:14b
