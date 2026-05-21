@@ -209,7 +209,7 @@ services:
 
   # ── Dify Plugin Daemon (required for model providers in v1.x) ─
   dify-plugin-daemon:
-    image: langgenius/dify-plugin-daemon:latest
+    image: langgenius/dify-plugin-daemon:0.6.1-local
     restart: unless-stopped
     environment:
       DB_USERNAME: ${POSTGRES_USER:-dify}
