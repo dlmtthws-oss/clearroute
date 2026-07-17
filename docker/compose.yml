@@ -258,6 +258,11 @@ services:
     restart: unless-stopped
     ports:
       - "11434:11434"   # Dify and n8n connect to this directly
+    environment:
+      # Keep loaded models resident in memory for 24 hours of inactivity.
+      # Without this, Ollama evicts qwen3:14b after ~5 min and the next
+      # request cold-starts (3-5 min load time), exceeding Dify's 300s timeout.
+      OLLAMA_KEEP_ALIVE: "24h"
     volumes:
       - ollama-data:/root/.ollama
     # ── NVIDIA GPU passthrough (WSL2) ──
