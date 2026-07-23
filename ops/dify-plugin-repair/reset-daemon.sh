@@ -63,6 +63,11 @@ exists "$DAEMON_CONTAINER" && run "docker restart $DAEMON_CONTAINER" \
   || echo "  SKIP: daemon container '$DAEMON_CONTAINER' not found (set DAEMON_CONTAINER)."
 exists "$API_CONTAINER" && run "docker restart $API_CONTAINER" \
   || echo "  SKIP: api container '$API_CONTAINER' not found."
+echo "  NOTE: a plain restart reuses the container's existing state. In the"
+echo "  2026-07 lab incident the errors only cleared after the daemon container"
+echo "  was RECREATED (fresh container, state rebuilt from the clean DBs):"
+echo "      docker compose up -d --force-recreate plugin_daemon"
+echo "  If a restart leaves the errors, recreate instead (Step 3b)."
 
 echo "== Step 4: verify boot is silent =="
 if [ "$DRY" = 0 ] && exists "$DAEMON_CONTAINER"; then

@@ -1,15 +1,22 @@
--- scan.sql — READ ONLY diagnostic.
+-- scan.sql — READ ONLY diagnostic. Codepoint-agnostic, scoped to plugin ids.
 --
--- Lists every text-like column in the CURRENT database whose value contains
--- the corrupted plugin-identifier separator U+F03A (UTF-8 bytes EF 80 BA),
--- the private-use-area look-alike that a FAT32-hostile copy tool substituted
--- for the ASCII colon ':' (0x3A) in `vendor/name:version@hash`.
+-- Lists every value in the CURRENT database that (a) looks like a plugin
+-- identifier — it contains both '/' and '@' — and (b) holds a non-ASCII byte,
+-- detected structurally as octet_length <> char_length. For each hit it prints
+-- the value and its UTF-8 hex, so you can read off the REAL corrupted codepoint
+-- instead of guessing.
 --
--- It enumerates columns from information_schema, so it finds the corruption
--- WHEREVER it is hiding — including inside jsonb/json blobs and tables that
--- are not the "obvious" plugin tables. It changes nothing.
+-- Why this shape:
+--  * Codepoint-agnostic — the incident notes guessed the bad separator twice
+--    (U+FF1A, then U+F03A). Any non-ASCII byte in a plugin identifier is wrong;
+--    the hex tells you exactly which one, whatever it is.
+--  * Scoped to '/'...'@' values — plugin identifiers are pure ASCII, but other
+--    columns legitimately hold non-ASCII (descriptions, user data, emoji). The
+--    guard keeps those out, so a hit here always means real corruption. It is
+--    the same guard sql/repair.sql applies, so scan and repair agree.
+--  * Finds it wherever it hides, including inside jsonb/json blobs.
 --
--- Prints an empty result set when the database is clean.
+-- Prints an empty result set when the database is clean. Changes nothing.
 
 \pset footer off
 
@@ -17,16 +24,16 @@ SELECT
   coalesce(
     string_agg(
       format(
-        'SELECT %L::text AS db, %L::text AS relation, %L::text AS "column", count(*) AS hits '
-        || 'FROM %I.%I WHERE %I::text LIKE %L HAVING count(*) > 0',
-        current_database(), table_schema || '.' || table_name, column_name,
-        table_schema, table_name, column_name,
-        '%' || chr(x'F03A'::int) || '%'
+        '(SELECT %L::text AS relation, %L::text AS "column", left(%I::text,80) AS value, '
+        || 'encode(convert_to(%I::text,''UTF8''),''hex'') AS hex '
+        || 'FROM %I.%I WHERE octet_length(%I::text) <> char_length(%I::text) '
+        || 'AND %I::text LIKE ''%%/%%@%%'' LIMIT 5)',
+        table_schema || '.' || table_name, column_name, column_name, column_name,
+        table_schema, table_name, column_name, column_name, column_name
       ),
       E'\nUNION ALL\n'
     ),
-    -- Fallback when the DB has no text-like columns at all.
-    'SELECT NULL::text AS db, NULL::text AS relation, NULL::text AS "column", 0 AS hits WHERE false'
+    'SELECT NULL::text AS relation, NULL::text AS "column", NULL::text AS value, NULL::text AS hex WHERE false'
   )
 FROM information_schema.columns
 WHERE table_schema NOT IN ('pg_catalog', 'information_schema')

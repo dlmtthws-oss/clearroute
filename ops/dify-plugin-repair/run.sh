@@ -56,11 +56,13 @@ do_scan() {
     local out
     out="$(psql_in "$db" < "$HERE/sql/scan.sql")"
     printf '%s\n' "$out"
-    printf '%s' "$out" | grep -Eq '\|[[:space:]]*[0-9]+[[:space:]]*$' && found=1 || true
+    # A real hit prints a long UTF-8 hex string in the last column; table/column
+    # names never produce 20+ consecutive hex chars.
+    printf '%s' "$out" | grep -Eiq '[0-9a-f]{20,}' && found=1 || true
   done
   if [ "$found" = 0 ]; then
     echo
-    echo "All scanned databases are clean (no U+F03A found)."
+    echo "All scanned databases are clean (no corrupted plugin identifiers found)."
   fi
 }
 
@@ -84,8 +86,9 @@ do_repair() {
   echo "Repair committed. Re-scanning to confirm:"
   do_scan
   echo
-  echo "Databases are the api's source of truth. Now reset the daemon's own"
-  echo "stores so it re-reads the clean list:  ./reset-daemon.sh --yes"
+  echo "Databases are the api's source of truth. Now get the daemon to re-read"
+  echo "the clean list:  ./reset-daemon.sh --yes  (a plain restart may not be"
+  echo "enough — if errors persist, recreate the daemon container; see that script)."
 }
 
 require_container
