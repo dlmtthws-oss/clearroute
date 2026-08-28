@@ -644,3 +644,80 @@ body {
   .jv-panel { max-width: 100%; }
   .jv-suggestions { grid-template-columns: 1fr; }
 }
+
+/* Jarvis action-proposal tray */
+.jv-actions {
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(56, 225, 255, 0.14);
+  max-height: 40%;
+  overflow-y: auto;
+}
+.jv-action {
+  border: 1px solid rgba(56, 225, 255, 0.28);
+  background: rgba(56, 225, 255, 0.06);
+  border-radius: 12px;
+  padding: 11px 12px;
+}
+.jv-action-done { border-color: rgba(52, 211, 153, 0.5); }
+.jv-action-error { border-color: rgba(255, 77, 109, 0.5); }
+.jv-action-head { display: flex; align-items: center; gap: 8px; }
+.jv-action-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--jv-cyan);
+  background: rgba(56, 225, 255, 0.12);
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.jv-action-name { font-weight: 600; color: #eaf7ff; font-size: 13.5px; }
+.jv-action-desc { font-size: 12px; color: #9fc2d1; margin-top: 4px; line-height: 1.4; }
+.jv-action-params { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.jv-param {
+  font-size: 11px;
+  color: #bcd; 
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(56, 225, 255, 0.14);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.jv-param b { color: #eaf7ff; font-weight: 600; }
+.jv-action-btns { display: flex; gap: 8px; margin-top: 10px; }
+.jv-run {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 9px;
+  background: var(--jv-cyan);
+  color: #04121b;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+.jv-run:hover { filter: brightness(1.08); }
+.jv-dismiss {
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(56, 225, 255, 0.24);
+  background: transparent;
+  color: #a7c8d6;
+  font-size: 13px;
+  cursor: pointer;
+}
+.jv-dismiss:hover { background: rgba(255, 255, 255, 0.05); }
+.jv-action-status { margin-top: 8px; font-size: 12.5px; color: #9fc2d1; }
+.jv-action-status.jv-ok { color: #34d399; }
+.jv-action-status.jv-err { color: #ff6b81; }
+.jv-link {
+  background: none;
+  border: none;
+  color: var(--jv-cyan);
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 0;
+  text-decoration: underline;
+}

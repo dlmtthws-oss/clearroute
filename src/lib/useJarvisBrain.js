@@ -288,7 +288,7 @@ export function useJarvisBrain(user) {
             })
           )
         }
-        return data
+        return data // includes proposedActions for the UI to confirm
       } catch (err) {
         setMessages((prev) =>
           mergeMessage(prev, {
@@ -307,6 +307,16 @@ export function useJarvisBrain(user) {
     [userId, broadcastStatus]
   )
 
+  // Execute a confirmed action by calling the jarvis-dispatch edge function,
+  // which signs and forwards it to the self-hosted n8n webhook.
+  const dispatchAction = useCallback(async (automationId, params = {}) => {
+    const { data, error } = await supabase.functions.invoke('jarvis-dispatch', {
+      body: { automationId, params },
+    })
+    if (error) throw error
+    return data
+  }, [])
+
   const startNewBrainThread = useCallback(() => {
     // Next message creates a fresh conversation that all devices will adopt.
     setConversationId(null)
@@ -322,6 +332,7 @@ export function useJarvisBrain(user) {
     ready,
     conversationId,
     sendMessage,
+    dispatchAction,
     startNewBrainThread,
     broadcastStatus,
   }

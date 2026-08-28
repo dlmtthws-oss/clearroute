@@ -47,9 +47,13 @@ export default function Jarvis({ user }) {
     remoteStatus,
     ready,
     sendMessage,
+    dispatchAction,
     startNewBrainThread,
     broadcastStatus,
   } = useJarvisBrain(user)
+
+  // Actions Jarvis has proposed and is waiting for the user to confirm.
+  const [actions, setActions] = useState([])
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -111,15 +115,50 @@ export default function Jarvis({ user }) {
   }, [voiceOutSupported])
 
   const submit = useCallback(
-    (text) => {
+    async (text) => {
       const value = (text ?? input).trim()
       if (!value) return
       setInput('')
       stopSpeaking()
-      sendMessage(value)
+      const data = await sendMessage(value)
+      if (data?.proposedActions?.length) {
+        setActions((prev) => [
+          ...prev,
+          ...data.proposedActions.map((a) => ({
+            ...a,
+            key: (a.automationId || a.name) + '_' + Date.now() + Math.random(),
+            status: 'pending',
+          })),
+        ])
+      }
     },
     [input, sendMessage, stopSpeaking]
   )
+
+  const runAction = useCallback(
+    async (key) => {
+      setActions((prev) => prev.map((a) => (a.key === key ? { ...a, status: 'running' } : a)))
+      const action = actions.find((a) => a.key === key)
+      if (!action) return
+      try {
+        const res = await dispatchAction(action.automationId, action.params)
+        setActions((prev) =>
+          prev.map((a) =>
+            a.key === key
+              ? { ...a, status: res?.ok ? 'done' : 'error', result: res }
+              : a
+          )
+        )
+      } catch {
+        setActions((prev) => prev.map((a) => (a.key === key ? { ...a, status: 'error' } : a)))
+      }
+    },
+    [actions, dispatchAction]
+  )
+
+  const dismissAction = useCallback((key) => {
+    setActions((prev) => prev.filter((a) => a.key !== key))
+  }, [])
 
   // --- voice input via Web Speech API ---
   const toggleListen = useCallback(() => {
@@ -341,6 +380,51 @@ export default function Jarvis({ user }) {
                 </>
               )}
             </div>
+
+            {/* Proposed actions awaiting confirmation */}
+            {actions.length > 0 && (
+              <div className="jv-actions">
+                {actions.map((a) => (
+                  <div key={a.key} className={`jv-action jv-action-${a.status}`}>
+                    <div className="jv-action-head">
+                      <span className="jv-action-badge">
+                        {a.category === 'agent' ? '🤖 agent' : a.category === 'data' ? '📊 data' : '⚡ program'}
+                      </span>
+                      <span className="jv-action-name">{a.name}</span>
+                    </div>
+                    {a.description && <div className="jv-action-desc">{a.description}</div>}
+                    {a.params && Object.keys(a.params).length > 0 && (
+                      <div className="jv-action-params">
+                        {Object.entries(a.params).map(([k, v]) => (
+                          <span key={k} className="jv-param">
+                            {k}: <b>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</b>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {a.status === 'pending' && (
+                      <div className="jv-action-btns">
+                        <button className="jv-run" onClick={() => runAction(a.key)}>
+                          Run
+                        </button>
+                        <button className="jv-dismiss" onClick={() => dismissAction(a.key)}>
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
+                    {a.status === 'running' && <div className="jv-action-status">Running…</div>}
+                    {a.status === 'done' && (
+                      <div className="jv-action-status jv-ok">✓ Done · <button className="jv-link" onClick={() => dismissAction(a.key)}>clear</button></div>
+                    )}
+                    {a.status === 'error' && (
+                      <div className="jv-action-status jv-err">
+                        ✕ {a.result?.error || 'Failed'} · <button className="jv-link" onClick={() => runAction(a.key)}>retry</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Composer */}
             <div className="jv-composer">

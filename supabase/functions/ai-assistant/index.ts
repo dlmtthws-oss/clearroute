@@ -40,7 +40,15 @@ When showing lists, limit to top 5-10 items unless asked for more.
 Never expose internal database IDs in responses.
 If you cannot find data to answer a question, say so clearly rather than guessing.
 
-Important: You are READ ONLY - you can answer questions and guide users to actions but cannot directly create, update or delete records.`;
+You are also a COORDINATOR. Beyond answering questions, you can trigger the
+business's own programs and AI agents, which are exposed to you as
+"automations" (n8n workflows). Use list_automations to discover what is
+available, then run_automation to prepare one. run_automation does NOT execute
+immediately - it prepares the action and the user confirms it in the app before
+it runs. Only prepare an automation that clearly matches the user's intent,
+collect the parameters its schema requires, and briefly tell the user what you
+have prepared and that they should confirm it. Never claim an action has already
+run; it runs only after the user confirms.`;
 
 const TOOLS = [
   {
@@ -100,6 +108,26 @@ const TOOLS = [
         period: { type: "string" }
       }
     }
+  },
+  {
+    name: "list_automations",
+    description: "List the programs and AI agents (automations) Jarvis can trigger for this business. Call this to discover what actions are available before proposing one.",
+    input_schema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "run_automation",
+    description: "Prepare an automation (program or AI agent) to run. This does NOT execute it - it stages the action for the user to confirm in the app. Use the exact automation name from list_automations and provide params matching its input schema.",
+    input_schema: {
+      type: "object",
+      properties: {
+        automation_name: { type: "string", description: "Exact name from list_automations" },
+        params: { type: "object", description: "Parameters for the automation, matching its input_schema" }
+      },
+      required: ["automation_name"]
+    }
   }
 ];
 
@@ -143,11 +171,59 @@ const callClaude = async (messages: { role: string; content: string }[], tools: 
   return { ...data, duration };
 };
 
-const executeTool = async (supabase: ReturnType<typeof createSupabaseClient>, toolName: string, input: Record<string, unknown>) => {
+const executeTool = async (
+  supabase: ReturnType<typeof createSupabaseClient>,
+  toolName: string,
+  input: Record<string, unknown>,
+  userId: string,
+  proposals: Record<string, unknown>[],
+) => {
   try {
     let result;
-    
+
     switch (toolName) {
+      case "list_automations": {
+        const { data: automations } = await supabase
+          .from("jarvis_automations")
+          .select("id, name, description, category, input_schema, requires_confirmation")
+          .eq("user_id", userId)
+          .eq("enabled", true);
+        result = (automations || []).map((a) => ({
+          name: a.name,
+          description: a.description,
+          category: a.category,
+          input_schema: a.input_schema,
+        }));
+        break;
+      }
+      case "run_automation": {
+        const name = input.automation_name as string;
+        const { data: automation } = await supabase
+          .from("jarvis_automations")
+          .select("id, name, description, category, requires_confirmation")
+          .eq("user_id", userId)
+          .eq("enabled", true)
+          .ilike("name", name)
+          .single();
+        if (!automation) {
+          result = { error: `No enabled automation named "${name}". Use list_automations to see options.` };
+          break;
+        }
+        // Stage the action for user confirmation - do not execute here.
+        proposals.push({
+          automationId: automation.id,
+          name: automation.name,
+          description: automation.description,
+          category: automation.category,
+          params: (input.params as Record<string, unknown>) || {},
+          requiresConfirmation: automation.requires_confirmation,
+        });
+        result = {
+          staged: true,
+          message: `Prepared "${automation.name}" for the user to confirm in the app. It has not run yet.`,
+        };
+        break;
+      }
       case "get_revenue_summary": {
         const { data: revenue } = await supabase.rpc("get_revenue_summary", {
           period: input.period,
@@ -275,10 +351,11 @@ serve(async (req) => {
 
     const toolCalls = initialResponse.content?.filter((c: { type: string }) => c.type === "tool_use") || [];
     let toolResults: ToolResult[] = [];
+    const proposedActions: Record<string, unknown>[] = [];
 
     for (const toolCall of toolCalls) {
       const input = toolCall.input || {};
-      const result = await executeTool(supabase, toolCall.name, input as Record<string, unknown>);
+      const result = await executeTool(supabase, toolCall.name, input as Record<string, unknown>, userId, proposedActions);
       toolResults.push({
         content: JSON.stringify(result),
         tool_use_id: toolCall.id,
@@ -338,7 +415,8 @@ serve(async (req) => {
       JSON.stringify({
         response: finalResponse,
         conversationId: convId,
-        toolsUsed: toolResults.map((t) => t.type)
+        toolsUsed: toolResults.map((t) => t.type),
+        proposedActions
       }),
       { headers: { ...CORSHeaders, "Content-Type": "application/json" } }
     );
