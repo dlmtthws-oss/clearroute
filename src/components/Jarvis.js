@@ -1,5 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Component } from 'react'
 import { useJarvisBrain } from '../lib/useJarvisBrain'
+
+// A self-contained boundary: if anything inside Jarvis throws, it renders
+// nothing rather than taking the whole app down to a blank screen.
+class JarvisBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { failed: false }
+  }
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+  componentDidCatch(error) {
+    // eslint-disable-next-line no-console
+    console.error('[Jarvis] disabled after runtime error:', error)
+  }
+  render() {
+    if (this.state.failed) return null
+    return this.props.children
+  }
+}
 
 // Device glyphs for the presence bar.
 const DEVICE_ICON = {
@@ -32,7 +52,7 @@ function renderMessage(content) {
     .replace(/\n/g, '<br/>')
 }
 
-export default function Jarvis({ user }) {
+function JarvisInner({ user }) {
   const [isOpen, setIsOpen] = useState(false)
   const [input, setInput] = useState('')
   const [listening, setListening] = useState(false)
@@ -472,4 +492,12 @@ function greeting() {
   if (h < 12) return 'morning'
   if (h < 18) return 'afternoon'
   return 'evening'
+}
+
+export default function Jarvis(props) {
+  return (
+    <JarvisBoundary>
+      <JarvisInner {...props} />
+    </JarvisBoundary>
+  )
 }
