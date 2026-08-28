@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import GlobalSearch from './GlobalSearch'
 import NotificationPanel, { useNotificationCount } from './NotificationPanel'
 import InstallPrompt from './InstallPrompt'
-import AIAssistant from './AIAssistant.js'
+import Jarvis from './Jarvis.js'
 import { supabase } from '../lib/supabase'
 
 const adminLinks = [
@@ -275,7 +275,7 @@ export default function Layout({ user, children, onLogout }) {
         <GlobalSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} user={user} />
         <NotificationPanel isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} user={user} />
         <InstallPrompt />
-        {user?.role !== 'worker' && <AIAssistant user={user} />}
+        {user?.role !== 'worker' && <Jarvis user={user} />}
 
         {/* Page content */}
         <main className="flex-1 p-6 overflow-auto">
