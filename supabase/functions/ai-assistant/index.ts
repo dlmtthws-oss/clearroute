@@ -131,13 +131,18 @@ const TOOLS = [
   }
 ];
 
-const createSupabaseClient = (req: Request) => {
+const createSupabaseClient = (_req: Request) => {
+  // Use the service role for trusted server-side reads/writes. Message
+  // persistence (which powers cross-device sync) and the SECURITY DEFINER
+  // report functions must not be blocked by RLS on the anon key. The platform
+  // still gates this function behind JWT verification, so only authenticated
+  // users reach it.
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseKey = req.headers.get("apikey") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  return createClient(supabaseUrl, supabaseKey, { global: { headers: { apikey: supabaseKey } } });
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(supabaseUrl, serviceKey, { global: { headers: { apikey: serviceKey } } });
 };
 
-const callClaude = async (messages: { role: string; content: string }[], tools: unknown[], startTime: number) => {
+const callClaude = async (messages: { role: string; content: unknown }[], tools: unknown[], startTime: number) => {
   const claudeKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!claudeKey) {
     return { error: "Claude API key not configured" };
@@ -366,27 +371,25 @@ serve(async (req) => {
     let finalResponse = initialResponse.content?.find((c: { type: string }) => c.type === "text")?.text || "";
     
     if (toolResults.length > 0) {
+      // Feed the tool results back using the Anthropic content-block format:
+      // the assistant turn carries the original content (text + tool_use
+      // blocks), and the following user turn carries matching tool_result
+      // blocks keyed by tool_use_id.
       const secondResponse = await callClaude(
         [
           ...conversationHistory.map((m: { role: string; content: string }) => ({ role: m.role, content: m.content })),
           { role: "user", content: fullMessage },
-          ...toolCalls.map((tc: { id: string; name: string; input: unknown }) => ({
-            role: "assistant" as const,
-            content: "",
-            type: "tool_use" as const,
-            id: tc.id,
-            name: tc.name,
-            input: tc.input
-          })),
-          ...toolResults.map((tr) => ({
-            role: "user" as const,
-            content: "",
-            type: "tool_result" as const,
-            tool_use_id: tr.tool_use_id,
-            content: tr.content
-          }))
+          { role: "assistant", content: initialResponse.content },
+          {
+            role: "user",
+            content: toolResults.map((tr) => ({
+              type: "tool_result",
+              tool_use_id: tr.tool_use_id,
+              content: tr.content,
+            })),
+          },
         ],
-        [],
+        TOOLS,
         startTime
       );
 
