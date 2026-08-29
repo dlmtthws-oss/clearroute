@@ -7,6 +7,7 @@ const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 const CORSHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 interface AssistantRequest {
@@ -290,11 +291,26 @@ serve(async (req) => {
   const supabase = createSupabaseClient(req);
 
   try {
-    const { message, conversationId, userId, context } = await req.json() as AssistantRequest;
+    // Authenticate the caller from their JWT. The gateway no longer enforces
+    // this (verify_jwt is off so the browser's request and CORS preflight are
+    // never rejected before reaching us), so the function verifies the token
+    // itself and derives the user id from it rather than trusting the body.
+    const authHeader = req.headers.get("Authorization") || "";
+    const jwt = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: userData } = await supabase.auth.getUser(jwt);
+    const userId = userData?.user?.id;
 
-    if (!message || !userId) {
+    const { message, conversationId, context } = await req.json() as AssistantRequest;
+
+    if (!userId) {
       return new Response(
-        JSON.stringify({ error: "Message and User ID required" }),
+        JSON.stringify({ error: "Not authenticated" }),
+        { status: 401, headers: { ...CORSHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (!message) {
+      return new Response(
+        JSON.stringify({ error: "Message required" }),
         { status: 400, headers: { ...CORSHeaders, "Content-Type": "application/json" } }
       );
     }
