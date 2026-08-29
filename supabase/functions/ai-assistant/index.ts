@@ -374,6 +374,7 @@ serve(async (req) => {
     );
 
     if (initialResponse.error) {
+      console.error("[ai-assistant] Claude call failed:", JSON.stringify(initialResponse.error));
       return new Response(
         JSON.stringify({ error: initialResponse.error }),
         { status: 500, headers: { ...CORSHeaders, "Content-Type": "application/json" } }
@@ -451,9 +452,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    console.error("[ai-assistant] fatal error:", error?.message, error?.stack);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...CORSHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsFor(req), "Content-Type": "application/json" } }
     );
   }
 });
