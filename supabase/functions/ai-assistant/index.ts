@@ -158,13 +158,24 @@ const callClaude = async (messages: { role: string; content: unknown }[], tools:
     return { error: "Claude API key not configured" };
   }
 
+  // Identity-linked API keys (keys tied to a user identity that can act across
+  // multiple workspaces) require the request to name which workspace it acts
+  // in via the `anthropic-workspace-id` header. Send it when configured; it is
+  // harmless for plain workspace-scoped keys, so this supports both key types.
+  const workspaceId = Deno.env.get("ANTHROPIC_WORKSPACE_ID");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-api-key": claudeKey,
+    "anthropic-version": "2023-06-01"
+  };
+  if (workspaceId) {
+    headers["anthropic-workspace-id"] = workspaceId;
+  }
+
   const response = await fetch(CLAUDE_API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": claudeKey,
-      "anthropic-version": "2023-06-01"
-    },
+    headers,
     body: JSON.stringify({
       model: CLAUDE_MODEL,
       max_tokens: 2048,
