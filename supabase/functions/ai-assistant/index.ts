@@ -4,11 +4,20 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@1.35.7";
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 
-const CORSHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Build CORS headers per request. Echoing the origin and the browser's
+// requested headers guarantees the preflight allows exactly what the actual
+// POST will send (supabase-js can add headers beyond the usual set), which a
+// static allow-list can miss — causing the browser to accept the OPTIONS 200
+// but then refuse to send the POST.
+const corsFor = (req: Request) => ({
+  "Access-Control-Allow-Origin": req.headers.get("Origin") ?? "*",
+  "Access-Control-Allow-Headers":
+    req.headers.get("Access-Control-Request-Headers") ??
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+  "Access-Control-Max-Age": "86400",
+  "Vary": "Origin",
+});
 
 interface AssistantRequest {
   message: string;
@@ -283,6 +292,7 @@ const executeTool = async (
 };
 
 serve(async (req) => {
+  const CORSHeaders = corsFor(req);
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORSHeaders });
   }
