@@ -35,17 +35,21 @@ function getDeviceIdentity() {
   return { id, type, label: detectDeviceLabel(type) }
 }
 
-// Refine "Computer" into "Laptop" / "Desktop" using the Battery API.
+// Refine "Computer" into "Laptop" using the Battery API. A machine that
+// reports a real battery (running unplugged, not fully charged, or actively
+// charging one) is a laptop; otherwise we keep the neutral "Computer" label
+// rather than guessing "Desktop" (a plugged-in, fully-charged laptop is
+// indistinguishable from a desktop, so never mislabel it).
 async function refineComputerLabel(type) {
   if (type !== 'computer') return null
   try {
     if (navigator.getBattery) {
       const b = await navigator.getBattery()
-      // A machine that reports a real battery level and can run unplugged
-      // is almost certainly a laptop; a desktop typically reports charging
-      // with level pinned at 1 and no meaningful discharge time.
-      const hasBattery = typeof b.level === 'number' && b.dischargingTime !== 0 && b.dischargingTime !== Infinity
-      return hasBattery || !b.charging ? 'Laptop' : 'Desktop'
+      const looksLikeLaptop =
+        b.charging === false || // currently running on battery
+        (typeof b.level === 'number' && b.level < 1) || // battery not full → real battery
+        (typeof b.chargingTime === 'number' && b.chargingTime > 0 && b.chargingTime !== Infinity) // actively charging a real battery
+      return looksLikeLaptop ? 'Laptop' : 'Computer'
     }
   } catch {
     /* ignore */
