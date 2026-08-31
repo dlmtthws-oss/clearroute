@@ -24,3 +24,6 @@ yarn-error.log*
 
 # local env (contains secrets - never commit)
 .env
+
+# minipc agent worker secrets
+minipc/.env

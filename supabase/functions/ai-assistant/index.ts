@@ -60,17 +60,15 @@ collect the parameters its schema requires, and briefly tell the user what you
 have prepared and that they should confirm it. Never claim an action has already
 run; it runs only after the user confirms.
 
-You are also wired to the user's own AI agent service (a self-hosted multi-agent
-system). Use ask_agent to send a single task to one of their agents and relay
-its answer. Use coordinate_agents for a task that should be split across several
-agents. Use list_agents and list_agent_tools to see what exists. Use create_agent
-to build a new agent when the user asks for one - confirm the intended name and
-role with the user first, then create it and report back. Use execute_agent_tool
-to run one of the agent service's tools directly. These agent calls run
-immediately and return their result; summarise the result for the user in plain
-language rather than pasting raw JSON. If an agent call reports the bridge is not
-configured, tell the user their agent bridge (the n8n webhook URL and shared
-secret) has not been set up yet.`;
+You are also wired to the user's own always-on AI agent that runs on their
+private machine. You reach it by queueing a job that the agent picks up, runs
+locally, and returns. Use ask_agent to send a single task and relay the answer.
+Use coordinate_agents for a task split across several sub-agents. Use list_files
+to see files the agent can access, read_file to read one, and search_files to
+find text across them. Summarise results for the user in plain language rather
+than pasting raw JSON. If a job reports the agent is offline, tell the user their
+agent machine may be switched off or the agent container is not running, and that
+the request has been queued and will run once the agent is back.`;
 
 const TOOLS = [
   {
@@ -153,61 +151,58 @@ const TOOLS = [
   },
   {
     name: "ask_agent",
-    description: "Send a single task or question to the user's own AI agent service and return its answer. Use for anything the user asks their agent to think about or do that has no dangerous side effects.",
+    description: "Send a single task or question to the user's own always-on AI agent (runs on their private machine, backed by their local LLM). Use for anything they ask their agent to think about or do.",
     input_schema: {
       type: "object",
       properties: {
         task: { type: "string", description: "The task or question for the agent" },
-        agent_name: { type: "string", description: "Which agent to use; defaults to 'default'" }
+        agent_name: { type: "string", description: "Which agent persona to use; defaults to 'default'" }
       },
       required: ["task"]
     }
   },
   {
     name: "coordinate_agents",
-    description: "Send a task to be coordinated across several of the user's agents (multi-agent orchestration).",
+    description: "Send a larger task for the agent to break down and work through step by step.",
     input_schema: {
       type: "object",
       properties: {
         task: { type: "string", description: "The overall task to coordinate" },
-        agents: { type: "array", items: { type: "string" }, description: "Optional list of agent names to involve" }
+        agents: { type: "array", items: { type: "string" }, description: "Optional list of sub-agent names to involve" }
       },
       required: ["task"]
     }
   },
   {
-    name: "list_agents",
-    description: "List the agents available in the user's AI agent service.",
-    input_schema: { type: "object", properties: {} }
-  },
-  {
-    name: "list_agent_tools",
-    description: "List the tools available to the user's AI agent service.",
-    input_schema: { type: "object", properties: {} }
-  },
-  {
-    name: "create_agent",
-    description: "Create a new agent in the user's AI agent service. Confirm the intended name and role with the user before calling.",
+    name: "list_files",
+    description: "List files the user's agent can access in their files folder. Optionally within a subfolder path.",
     input_schema: {
       type: "object",
       properties: {
-        name: { type: "string", description: "Name for the new agent" },
-        role: { type: "string", description: "System role / purpose of the agent" },
-        tools: { type: "array", items: { type: "string" }, description: "Optional tool names to grant the agent" }
-      },
-      required: ["name", "role"]
+        path: { type: "string", description: "Optional subfolder path relative to the agent's files root" }
+      }
     }
   },
   {
-    name: "execute_agent_tool",
-    description: "Directly run one of the agent service's tools with parameters.",
+    name: "read_file",
+    description: "Read a text file from the user's agent files folder and return its contents.",
     input_schema: {
       type: "object",
       properties: {
-        tool: { type: "string", description: "Tool name from list_agent_tools" },
-        params: { type: "object", description: "Parameters for the tool" }
+        path: { type: "string", description: "File path relative to the agent's files root" }
       },
-      required: ["tool"]
+      required: ["path"]
+    }
+  },
+  {
+    name: "search_files",
+    description: "Search for text across the files the user's agent can access, returning matching files and lines.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "Text to search for" }
+      },
+      required: ["query"]
     }
   }
 ];
@@ -268,48 +263,47 @@ const callClaude = async (messages: { role: string; content: unknown }[], tools:
   return { ...data, duration };
 };
 
-// Bridge to the user's self-hosted AI agent service. The cloud edge function
-// cannot reach the user's localhost, so every agent call is HMAC-signed and
-// POSTed to their n8n webhook (public via a tunnel), which forwards it to the
-// agent API inside their Docker network. `op` selects the agent operation; the
-// n8n workflow switches on it. Returns { result } on success or { error }.
-const callAgentBridge = async (op: string, payload: Record<string, unknown>, userId: string) => {
-  const baseUrl = Deno.env.get("N8N_WEBHOOK_BASE_URL");
-  const secret = Deno.env.get("N8N_WEBHOOK_SECRET");
-  if (!baseUrl || !secret) {
-    return { error: "Agent bridge not configured. Set N8N_WEBHOOK_BASE_URL and N8N_WEBHOOK_SECRET." };
+// Pull-model bridge to the user's always-on agent. The cloud function cannot
+// reach a machine behind a home router, so instead of pushing to the agent we
+// enqueue a job in `jarvis_agent_jobs`; the agent worker (running on the user's
+// private machine) polls Supabase over outbound HTTPS, executes the job, and
+// writes the result back. Returns { result }, { error }, or { pending } when the
+// agent didn't answer in the wait window.
+const runAgentJob = async (
+  supabase: ReturnType<typeof createSupabaseClient>,
+  op: string,
+  params: Record<string, unknown>,
+  userId: string,
+  conversationId: string | undefined,
+) => {
+  // Enqueue a job the always-on agent worker (polling Supabase from the user's
+  // private machine) will pick up, run locally, and write a result to. Wait a
+  // short while for that result; if the agent is offline the job stays queued.
+  const { data: job, error } = await supabase
+    .from("jarvis_agent_jobs")
+    .insert({ user_id: userId, conversation_id: conversationId ?? null, op, params, status: "queued" })
+    .select("id")
+    .single();
+  if (error || !job) {
+    return { error: "Could not queue the agent job." };
   }
-  const path = Deno.env.get("JARVIS_AGENT_WEBHOOK_PATH") || "webhook/jarvis-agent";
-  const url = baseUrl.replace(/\/$/, "") + "/" + path.replace(/^\//, "");
-  const timestamp = Date.now().toString();
-  const body = JSON.stringify({ op, ...payload, user_id: userId, requested_at: new Date().toISOString() });
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sigBuf = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(timestamp + "." + body));
-  const signature = Array.from(new Uint8Array(sigBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  try {
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-jarvis-timestamp": timestamp,
-        "x-jarvis-signature": signature,
-      },
-      body,
-    });
-    const text = await resp.text();
-    let parsed: unknown;
-    try { parsed = JSON.parse(text); } catch { parsed = text; }
-    if (!resp.ok) return { error: `Agent bridge returned ${resp.status}`, detail: parsed };
-    return { result: parsed };
-  } catch (e) {
-    return { error: (e as Error).message };
+  const deadlineMs = Date.now() + 40000; // wait up to ~40s for the agent to answer
+  while (Date.now() < deadlineMs) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const { data: row } = await supabase
+      .from("jarvis_agent_jobs")
+      .select("status, result, error")
+      .eq("id", job.id)
+      .single();
+    if (row?.status === "done") return { result: row.result };
+    if (row?.status === "error") return { error: row.error || "The agent reported an error." };
   }
+  return {
+    pending: true,
+    job_id: job.id,
+    message:
+      "The agent didn't respond in time - it may be offline or busy. The job is queued and will run when the agent is back online.",
+  };
 };
 
 const executeTool = async (
@@ -318,6 +312,7 @@ const executeTool = async (
   input: Record<string, unknown>,
   userId: string,
   proposals: Record<string, unknown>[],
+  conversationId: string | undefined,
 ) => {
   try {
     let result;
@@ -408,27 +403,23 @@ const executeTool = async (
         break;
       }
       case "ask_agent": {
-        result = await callAgentBridge("process", { task: input.task, agent_name: input.agent_name || "default" }, userId);
+        result = await runAgentJob(supabase, "process", { task: input.task, agent_name: input.agent_name || "default" }, userId, conversationId);
         break;
       }
       case "coordinate_agents": {
-        result = await callAgentBridge("coordinate", { task: input.task, agents: input.agents || [] }, userId);
+        result = await runAgentJob(supabase, "coordinate", { task: input.task, agents: input.agents || [] }, userId, conversationId);
         break;
       }
-      case "list_agents": {
-        result = await callAgentBridge("list_agents", {}, userId);
+      case "list_files": {
+        result = await runAgentJob(supabase, "file_list", { path: input.path || "" }, userId, conversationId);
         break;
       }
-      case "list_agent_tools": {
-        result = await callAgentBridge("list_tools", {}, userId);
+      case "read_file": {
+        result = await runAgentJob(supabase, "file_read", { path: input.path }, userId, conversationId);
         break;
       }
-      case "create_agent": {
-        result = await callAgentBridge("create_agent", { name: input.name, role: input.role, tools: input.tools || [] }, userId);
-        break;
-      }
-      case "execute_agent_tool": {
-        result = await callAgentBridge("execute_tool", { tool: input.tool, params: input.params || {} }, userId);
+      case "search_files": {
+        result = await runAgentJob(supabase, "file_search", { query: input.query }, userId, conversationId);
         break;
       }
       default:
@@ -537,7 +528,7 @@ serve(async (req) => {
 
     for (const toolCall of toolCalls) {
       const input = toolCall.input || {};
-      const result = await executeTool(supabase, toolCall.name, input as Record<string, unknown>, userId, proposedActions);
+      const result = await executeTool(supabase, toolCall.name, input as Record<string, unknown>, userId, proposedActions, convId);
       toolResults.push({
         content: JSON.stringify(result),
         tool_use_id: toolCall.id,
