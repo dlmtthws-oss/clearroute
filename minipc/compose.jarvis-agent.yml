@@ -1,0 +1,40 @@
+# Jarvis agent worker — run this on the always-on minipc.
+#
+#   cd minipc
+#   cp .env.example .env      # then paste your Supabase service_role key into .env
+#   mkdir -p /home/daleoss/jarvis-files   # (or edit the volume path below)
+#   docker compose -f compose.jarvis-agent.yml up -d --build
+#
+# It joins your existing Docker network so it can reach Ollama by name, and it
+# restarts automatically on reboot. It only makes OUTBOUND calls to Supabase and
+# Ollama — nothing is exposed to the internet.
+
+services:
+  jarvis-agent:
+    build: ./jarvis-agent
+    container_name: jarvis-agent
+    restart: unless-stopped
+    environment:
+      - SUPABASE_URL=https://mskdxzknzblvmflsydjs.supabase.co
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      # Ollama on the same Docker network. If your Ollama service/container has a
+      # different name, change 'ollama' here (e.g. http://ollama:11434).
+      - OLLAMA_URL=http://ollama:11434
+      # Leave blank to auto-pick the first installed model, or pin one:
+      - OLLAMA_MODEL=
+      - FILES_ROOT=/files
+      - POLL_INTERVAL=2
+    volumes:
+      # Folder the agent may READ. Put files here for Jarvis to access.
+      # Change the left side to wherever you keep them.
+      - /home/daleoss/jarvis-files:/files:ro
+    networks:
+      - minipc-net
+
+networks:
+  # Reuse the network your other services (Ollama, n8n) already run on, so the
+  # agent can reach them by service name. Confirm the name with:
+  #   docker network ls | grep minipc
+  minipc-net:
+    external: true
+    name: clearroute-minipc_minipc-net
