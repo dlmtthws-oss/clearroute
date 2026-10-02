@@ -68,7 +68,15 @@ to see files the agent can access, read_file to read one, and search_files to
 find text across them. Summarise results for the user in plain language rather
 than pasting raw JSON. If a job reports the agent is offline, tell the user their
 agent machine may be switched off or the agent container is not running, and that
-the request has been queued and will run once the agent is back.`;
+the request has been queued and will run once the agent is back.
+
+You also keep the user's TASK LIST. When they ask you to remember something, note
+a job, or be reminded of something to do, use add_task. Use list_tasks to show
+what's outstanding (default to open tasks, soonest due first), complete_task when
+they've finished something, and update_task / delete_task to change or remove an
+item. When a task has a due date, convert natural phrases like "tomorrow",
+"Friday", or "next week" into an ISO 8601 timestamp using the current date given
+below. After changing the list, briefly confirm what you did in plain language.`;
 
 const TOOLS = [
   {
@@ -204,6 +212,67 @@ const TOOLS = [
       },
       required: ["query"]
     }
+  },
+  {
+    name: "add_task",
+    description: "Add a to-do item to the user's task list. Use whenever they ask to remember, note, or be reminded of something to do.",
+    input_schema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "Short description of the task" },
+        notes: { type: "string", description: "Optional extra detail" },
+        due_at: { type: "string", description: "Optional due date/time as an ISO 8601 timestamp (e.g. 2026-10-05T09:00:00Z). Convert any relative phrasing like 'tomorrow 9am' using the current date given in the system prompt." }
+      },
+      required: ["title"]
+    }
+  },
+  {
+    name: "list_tasks",
+    description: "List the user's tasks. Defaults to open (not-yet-done) tasks, soonest due first.",
+    input_schema: {
+      type: "object",
+      properties: {
+        status: { type: "string", enum: ["open", "done", "all"], description: "Which tasks to show; defaults to open" },
+        due: { type: "string", enum: ["overdue", "today", "week", "any"], description: "Optional due-date filter" },
+        limit: { type: "number" }
+      }
+    }
+  },
+  {
+    name: "complete_task",
+    description: "Mark a task as done. Identify it by a word or phrase from its title. If the phrase matches more than one open task, the tool returns the candidates so you can ask which one.",
+    input_schema: {
+      type: "object",
+      properties: {
+        match: { type: "string", description: "A word or phrase from the task's title" }
+      },
+      required: ["match"]
+    }
+  },
+  {
+    name: "update_task",
+    description: "Change a task's title, notes, or due date. Identify it by a word or phrase from its current title.",
+    input_schema: {
+      type: "object",
+      properties: {
+        match: { type: "string", description: "A word or phrase from the task's current title" },
+        title: { type: "string", description: "New title" },
+        notes: { type: "string", description: "New notes" },
+        due_at: { type: "string", description: "New due date/time as an ISO 8601 timestamp, or empty string to clear it" }
+      },
+      required: ["match"]
+    }
+  },
+  {
+    name: "delete_task",
+    description: "Remove a task from the list entirely. Identify it by a word or phrase from its title.",
+    input_schema: {
+      type: "object",
+      properties: {
+        match: { type: "string", description: "A word or phrase from the task's title" }
+      },
+      required: ["match"]
+    }
   }
 ];
 
@@ -245,7 +314,7 @@ const callClaude = async (messages: { role: string; content: unknown }[], tools:
     body: JSON.stringify({
       model: CLAUDE_MODEL,
       max_tokens: 2048,
-      system: SYSTEM_PROMPT,
+      system: `${SYSTEM_PROMPT}\n\nThe current date and time is ${new Date().toISOString()} (UTC).`,
       messages: messages.slice(-10),
       tools,
       tool_choice: { type: "auto" }
@@ -420,6 +489,92 @@ const executeTool = async (
       }
       case "search_files": {
         result = await runAgentJob(supabase, "file_search", { query: input.query }, userId, conversationId);
+        break;
+      }
+      case "add_task": {
+        const row: Record<string, unknown> = { user_id: userId, title: input.title, status: "open" };
+        if (input.notes) row.notes = input.notes;
+        if (input.due_at) row.due_at = input.due_at;
+        const { data: task, error } = await supabase
+          .from("jarvis_tasks")
+          .insert(row)
+          .select("id, title, due_at")
+          .single();
+        result = error ? { error: "Could not add the task." } : { added: true, task };
+        break;
+      }
+      case "list_tasks": {
+        const status = (input.status as string) || "open";
+        let q = supabase
+          .from("jarvis_tasks")
+          .select("id, title, notes, status, due_at")
+          .eq("user_id", userId);
+        if (status !== "all") q = q.eq("status", status);
+        if (input.due && input.due !== "any") {
+          const now = new Date();
+          if (input.due === "overdue") {
+            q = q.lt("due_at", now.toISOString());
+          } else if (input.due === "today") {
+            const end = new Date(now); end.setUTCHours(23, 59, 59, 999);
+            q = q.not("due_at", "is", null).lte("due_at", end.toISOString());
+          } else if (input.due === "week") {
+            const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            q = q.not("due_at", "is", null).lte("due_at", end.toISOString());
+          }
+        }
+        const { data: tasks } = await q
+          .order("due_at", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: true })
+          .limit((input.limit as number) || 50);
+        result = { tasks: tasks || [], count: (tasks || []).length };
+        break;
+      }
+      case "complete_task":
+      case "update_task":
+      case "delete_task": {
+        const match = (input.match as string) || "";
+        // Find candidate tasks by a phrase from the title. For completion we only
+        // consider still-open tasks; for edits/removal, any of the user's tasks.
+        let finder = supabase
+          .from("jarvis_tasks")
+          .select("id, title, status, due_at")
+          .eq("user_id", userId)
+          .ilike("title", `%${match}%`);
+        if (toolName === "complete_task") finder = finder.eq("status", "open");
+        const { data: matches } = await finder.limit(10);
+        const candidates = matches || [];
+        if (candidates.length === 0) {
+          result = { error: `No matching task found for "${match}".` };
+          break;
+        }
+        if (candidates.length > 1) {
+          result = { ambiguous: true, candidates, message: "More than one task matches - ask the user which one." };
+          break;
+        }
+        const target = candidates[0];
+        if (toolName === "delete_task") {
+          const { error } = await supabase.from("jarvis_tasks").delete().eq("id", target.id);
+          result = error ? { error: "Could not delete the task." } : { deleted: true, task: target };
+        } else if (toolName === "complete_task") {
+          const { error } = await supabase.from("jarvis_tasks").update({ status: "done" }).eq("id", target.id);
+          result = error ? { error: "Could not complete the task." } : { completed: true, task: target };
+        } else {
+          const changes: Record<string, unknown> = {};
+          if (input.title) changes.title = input.title;
+          if (input.notes !== undefined) changes.notes = input.notes;
+          if (input.due_at !== undefined) changes.due_at = input.due_at === "" ? null : input.due_at;
+          if (Object.keys(changes).length === 0) {
+            result = { error: "Nothing to update - provide a new title, notes, or due date." };
+            break;
+          }
+          const { data: updated, error } = await supabase
+            .from("jarvis_tasks")
+            .update(changes)
+            .eq("id", target.id)
+            .select("id, title, notes, status, due_at")
+            .single();
+          result = error ? { error: "Could not update the task." } : { updated: true, task: updated };
+        }
         break;
       }
       default:
