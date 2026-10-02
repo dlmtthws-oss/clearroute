@@ -104,6 +104,16 @@ function JarvisInner({ user }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [isWorker])
 
+  // Deep link: open Jarvis straight away when the page is loaded with
+  // ?jarvis (or #jarvis) — lets a desktop shortcut land directly in the HUD.
+  useEffect(() => {
+    if (isWorker || typeof window === 'undefined') return
+    const { search, hash } = window.location
+    if (/[?&]jarvis\b/.test(search) || /#jarvis\b/.test(hash)) {
+      setIsOpen(true)
+    }
+  }, [isWorker])
+
   useEffect(() => {
     if (messages.length) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking])
