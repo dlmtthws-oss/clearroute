@@ -377,6 +377,7 @@ const runAgentJob = async (
 
 const executeTool = async (
   supabase: ReturnType<typeof createSupabaseClient>,
+  userSupabase: ReturnType<typeof createSupabaseClient>,
   toolName: string,
   input: Record<string, unknown>,
   userId: string,
@@ -430,7 +431,7 @@ const executeTool = async (
         break;
       }
       case "get_revenue_summary": {
-        const { data: revenue } = await supabase.rpc("get_revenue_summary", {
+        const { data: revenue } = await userSupabase.rpc("get_revenue_summary", {
           period: input.period,
           year_num: input.year,
           month_num: input.month
@@ -439,7 +440,7 @@ const executeTool = async (
         break;
       }
       case "get_outstanding_invoices": {
-        const { data: invoices } = await supabase.rpc("get_outstanding_invoices", {
+        const { data: invoices } = await userSupabase.rpc("get_outstanding_invoices", {
           limit_num: input.limit || 10,
           min_days: input.min_days_overdue || 0
         });
@@ -447,7 +448,7 @@ const executeTool = async (
         break;
       }
       case "get_customer_summary": {
-        const { data: customers } = await supabase.rpc("get_customer_summary", {
+        const { data: customers } = await userSupabase.rpc("get_customer_summary", {
           customer_name: input.customer_name,
           limit_num: input.limit || 20,
           sort_by: input.sort_by || "revenue"
@@ -456,7 +457,7 @@ const executeTool = async (
         break;
       }
       case "get_expense_summary": {
-        const { data: expenses } = await supabase.rpc("get_expense_summary", {
+        const { data: expenses } = await userSupabase.rpc("get_expense_summary", {
           period: input.period,
           category: input.category
         });
@@ -606,6 +607,16 @@ serve(async (req) => {
     const { data: userData } = await supabase.auth.getUser(jwt);
     const userId = userData?.user?.id;
 
+    // A client that acts AS the signed-in user (not the service role), used for
+    // the business-report RPCs so they scope to the caller's company via
+    // current_company_id(). The service-role `supabase` client is still used for
+    // trusted writes (message history, agent-job queue, task list).
+    const userSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+    );
+
     const { message, conversationId, context } = await req.json() as AssistantRequest;
 
     if (!userId) {
@@ -683,7 +694,7 @@ serve(async (req) => {
 
     for (const toolCall of toolCalls) {
       const input = toolCall.input || {};
-      const result = await executeTool(supabase, toolCall.name, input as Record<string, unknown>, userId, proposedActions, convId);
+      const result = await executeTool(supabase, userSupabase, toolCall.name, input as Record<string, unknown>, userId, proposedActions, convId);
       toolResults.push({
         content: JSON.stringify(result),
         tool_use_id: toolCall.id,
