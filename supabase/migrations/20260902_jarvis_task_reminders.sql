@@ -70,5 +70,9 @@ begin
 end;
 $$;
 
+-- Only the cron job (owner / postgres) should run this; it must not be callable
+-- by signed-in or anonymous users via the REST RPC endpoint.
+revoke execute on function generate_task_reminders() from public, anon, authenticated;
+
 -- Run every morning at 07:00 UTC (keeps the app's existing minute-0 convention).
 select cron.schedule('notify-tasks-due', '0 7 * * *', $$select generate_task_reminders();$$);

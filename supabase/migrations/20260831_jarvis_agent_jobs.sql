@@ -26,10 +26,11 @@ alter table jarvis_agent_jobs enable row level security;
 -- which bypasses RLS, so no write policies are needed for anon/auth users.
 drop policy if exists "own agent jobs select" on jarvis_agent_jobs;
 create policy "own agent jobs select" on jarvis_agent_jobs
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 create or replace function set_jarvis_agent_jobs_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = public, pg_temp as $$
 begin
   new.updated_at = now();
   return new;

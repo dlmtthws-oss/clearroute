@@ -25,22 +25,23 @@ alter table jarvis_tasks enable row level security;
 
 drop policy if exists "own tasks select" on jarvis_tasks;
 create policy "own tasks select" on jarvis_tasks
-  for select using (auth.uid() = user_id);
+  for select using ((select auth.uid()) = user_id);
 
 drop policy if exists "own tasks insert" on jarvis_tasks;
 create policy "own tasks insert" on jarvis_tasks
-  for insert with check (auth.uid() = user_id);
+  for insert with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own tasks update" on jarvis_tasks;
 create policy "own tasks update" on jarvis_tasks
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 drop policy if exists "own tasks delete" on jarvis_tasks;
 create policy "own tasks delete" on jarvis_tasks
-  for delete using (auth.uid() = user_id);
+  for delete using ((select auth.uid()) = user_id);
 
 create or replace function set_jarvis_tasks_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = public, pg_temp as $$
 begin
   new.updated_at = now();
   -- stamp completed_at the moment a task flips to done, clear it if reopened
