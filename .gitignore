@@ -21,3 +21,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# local env (contains secrets - never commit)
+.env
+
+# minipc agent worker secrets
+minipc/.env

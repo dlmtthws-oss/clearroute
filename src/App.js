@@ -61,16 +61,29 @@ function App() {
   const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   useEffect(() => {
+    let finished = false
+    const finish = () => {
+      if (!finished) {
+        finished = true
+        setLoading(false)
+      }
+    }
     async function seedDemo() {
       try {
         const { seedDemoData } = await import('./lib/seedDemo')
         await seedDemoData()
       } catch (e) {
         console.log('Seed skipped')
+      } finally {
+        finish()
       }
-      setLoading(false)
     }
     seedDemo()
+    // Safety net: never let demo-seeding (a non-essential Supabase call that
+    // can stall on a slow connection or cold start) block the app on the
+    // "Loading..." screen. Boot regardless after a short grace period.
+    const timeout = setTimeout(finish, 4000)
+    return () => clearTimeout(timeout)
   }, [])
 
   useEffect(() => {
