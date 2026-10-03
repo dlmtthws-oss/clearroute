@@ -34,10 +34,14 @@ With `restart: unless-stopped` it comes back on every reboot.
    ```bash
    cd minipc
    cp .env.example .env
-   # edit .env and paste the service_role key from
-   # Supabase -> Project Settings -> API -> service_role (secret)
+   # edit .env and paste the service_role key from the
+   # jarvis-control-plane project (NOT production):
+   # Supabase -> jarvis-control-plane -> Project Settings -> API -> service_role
    ```
-   The key stays on your minipc; `.env` is git-ignored.
+   The key stays on your minipc; `.env` is git-ignored. The worker talks to
+   Jarvis's isolated `jarvis-control-plane` project (URL already set in
+   `compose.jarvis-agent.yml`), kept separate from ClearRoute production so it
+   can never touch live customer data.
 
 3. **Check the network + Ollama names.** The compose file joins
    `clearroute-minipc_minipc-net` and calls Ollama at `http://ollama:11434`.

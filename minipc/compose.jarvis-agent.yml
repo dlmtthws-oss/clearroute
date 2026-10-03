@@ -15,7 +15,10 @@ services:
     container_name: jarvis-agent
     restart: unless-stopped
     environment:
-      - SUPABASE_URL=https://mskdxzknzblvmflsydjs.supabase.co
+      # Jarvis's isolated control-plane project (NOT the ClearRoute production
+      # project). Jarvis was split off here so it can never touch live customer
+      # data. The service_role key below must be this project's key.
+      - SUPABASE_URL=https://yoffekacztmvpfnzymgq.supabase.co
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       # Ollama on the same Docker network. If your Ollama service/container has a
       # different name, change 'ollama' here (e.g. http://ollama:11434).
