@@ -1,0 +1,89 @@
+# Standalone Jarvis orb — desktop launcher
+
+Open Jarvis as its own frameless window straight to the orb, from a desktop
+shortcut — no app install, no browser chrome. It opens the deployed Jarvis app
+(the `clearroute-jxav` project) with the app's `?jarvis` deep link, which lands
+directly in the Jarvis HUD.
+
+## Prerequisite: a reachable URL
+
+The shortcut needs a URL for the Jarvis app that loads **without a Vercel login
+prompt**. The default preview URLs are behind Vercel SSO, so pick one of:
+
+- **Turn off Deployment Protection** for the `clearroute-jxav` **production**
+  deployment (Vercel → project `clearroute-jxav` → Settings → Deployment
+  Protection), and use its production URL; or
+- **Add a custom domain** to `clearroute-jxav` (e.g. `jarvis.yourdomain`) and
+  use that.
+
+Either way you'll also sign in **once** to the Jarvis account (the
+jarvis-control-plane auth user) in the window; the session persists after that.
+
+> The orb only renders for a signed-in, non-worker user — that's by design.
+
+## Windows
+
+Run in **Windows PowerShell** (not WSL), from this folder:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\windows\Install-JarvisOrb.ps1 -Url "https://YOUR-JARVIS-URL"
+```
+
+Options:
+
+- `-Url` — the reachable Jarvis URL (required).
+- `-Name` — shortcut name (default `Jarvis`).
+- `-IconPath` — path to a `.ico` for the shortcut icon (optional; defaults to
+  the browser icon).
+
+It creates `Jarvis.lnk` on your Desktop that opens Edge (or Chrome) in app mode
+at `…?jarvis`. Re-run anytime to change the URL or icon.
+
+From WSL you can launch PowerShell without leaving the terminal:
+
+```bash
+powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ./windows/Install-JarvisOrb.ps1)" -Url "https://YOUR-JARVIS-URL"
+```
+
+## macOS
+
+Create an app-mode shortcut with Chrome/Edge:
+
+```bash
+# one-liner that makes a clickable .command on the Desktop
+cat > ~/Desktop/Jarvis.command <<'EOF'
+#!/bin/bash
+open -na "Google Chrome" --args --app="https://YOUR-JARVIS-URL?jarvis"
+EOF
+chmod +x ~/Desktop/Jarvis.command
+```
+
+(Or use Chrome → ⋮ → Cast, save, and share… → **Create shortcut…**, tick "Open
+as window", after visiting the URL with `?jarvis`.)
+
+## Linux
+
+Save as `~/.local/share/applications/jarvis.desktop` (and/or copy to
+`~/Desktop/`), then mark it executable:
+
+```ini
+[Desktop Entry]
+Type=Application
+Name=Jarvis
+Comment=Launch the Jarvis assistant orb
+Exec=google-chrome --app=https://YOUR-JARVIS-URL?jarvis
+Icon=utilities-terminal
+Terminal=false
+Categories=Utility;
+```
+
+```bash
+chmod +x ~/.local/share/applications/jarvis.desktop
+```
+
+## How the deep link works
+
+`src/components/Jarvis.js` opens the HUD automatically when the page loads with
+`?jarvis` in the query string (or `#jarvis` in the hash), and `⌘/Ctrl+Shift+J`
+toggles it once open. So any shortcut that points a browser at
+`<jarvis-url>?jarvis` lands straight in the orb.
