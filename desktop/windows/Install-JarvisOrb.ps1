@@ -9,13 +9,14 @@
     no tabs, no address bar — without installing anything.
 
     USAGE (in Windows PowerShell, not WSL):
-        # 1. Set the URL once (see README for the reachable-URL requirement):
-        #    the Jarvis app deployment (clearroute-jxav). It must be reachable
-        #    without a Vercel login prompt.
-        powershell -ExecutionPolicy Bypass -File .\Install-JarvisOrb.ps1 -Url "https://YOUR-JARVIS-URL"
+        # Zero-argument: uses the built-in production URL (Vercel SSO is off).
+        powershell -ExecutionPolicy Bypass -File .\Install-JarvisOrb.ps1
+
+        # Override the URL (e.g. once you add a custom domain):
+        powershell -ExecutionPolicy Bypass -File .\Install-JarvisOrb.ps1 -Url "https://jarvis.example.com"
 
         # optional: custom icon + custom shortcut name
-        powershell -ExecutionPolicy Bypass -File .\Install-JarvisOrb.ps1 -Url "https://YOUR-JARVIS-URL" -IconPath "C:\path\to\jarvis.ico" -Name "Jarvis"
+        powershell -ExecutionPolicy Bypass -File .\Install-JarvisOrb.ps1 -Name "Jarvis" -IconPath "C:\path\to\jarvis.ico"
 
     Re-running it just overwrites the shortcut, so it is safe to run again to
     change the URL or icon.
@@ -23,9 +24,10 @@
 
 [CmdletBinding()]
 param(
-    # The reachable URL of the Jarvis app (clearroute-jxav). Edit the default
-    # below, or pass -Url. Must load WITHOUT a Vercel SSO prompt (see README).
-    [string]$Url = "https://REPLACE-WITH-YOUR-JARVIS-URL",
+    # The reachable URL of the Jarvis app (clearroute-jxav). Defaults to the
+    # production deployment (Vercel SSO is off, so it loads without a login
+    # prompt). Pass -Url to override, e.g. once you add a custom domain.
+    [string]$Url = "https://clearroute-jxav-clear-route-5e6bb6db.vercel.app",
 
     # Shortcut name (becomes "<Name>.lnk" on the Desktop).
     [string]$Name = "Jarvis",

@@ -5,18 +5,23 @@ shortcut — no app install, no browser chrome. It opens the deployed Jarvis app
 (the `clearroute-jxav` project) with the app's `?jarvis` deep link, which lands
 directly in the Jarvis HUD.
 
-## Prerequisite: a reachable URL
+## Reachable URL
 
-The shortcut needs a URL for the Jarvis app that loads **without a Vercel login
-prompt**. The default preview URLs are behind Vercel SSO, so pick one of:
+The shortcut points at the `clearroute-jxav` production deployment:
 
-- **Turn off Deployment Protection** for the `clearroute-jxav` **production**
-  deployment (Vercel → project `clearroute-jxav` → Settings → Deployment
-  Protection), and use its production URL; or
-- **Add a custom domain** to `clearroute-jxav` (e.g. `jarvis.yourdomain`) and
-  use that.
+```
+https://clearroute-jxav-clear-route-5e6bb6db.vercel.app
+```
 
-Either way you'll also sign in **once** to the Jarvis account (the
+This is the installer's built-in default, so you can run it with no arguments.
+Vercel SSO (Deployment Protection) is off for this project, so the page loads
+without a Vercel login prompt.
+
+To use a nicer address instead, add a custom domain to `clearroute-jxav`
+(Vercel → project → Settings → Domains) and pass it with `-Url`
+(e.g. `-Url "https://jarvis.yourdomain"`).
+
+Either way you'll sign in **once** to the Jarvis account (the
 jarvis-control-plane auth user) in the window; the session persists after that.
 
 > The orb only renders for a signed-in, non-worker user — that's by design.
@@ -26,12 +31,12 @@ jarvis-control-plane auth user) in the window; the session persists after that.
 Run in **Windows PowerShell** (not WSL), from this folder:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\windows\Install-JarvisOrb.ps1 -Url "https://YOUR-JARVIS-URL"
+powershell -ExecutionPolicy Bypass -File .\windows\Install-JarvisOrb.ps1
 ```
 
 Options:
 
-- `-Url` — the reachable Jarvis URL (required).
+- `-Url` — override the built-in production URL (e.g. a custom domain).
 - `-Name` — shortcut name (default `Jarvis`).
 - `-IconPath` — path to a `.ico` for the shortcut icon (optional). If omitted,
   the bundled Jarvis orb icon (`jarvis.ico`, next to the script) is used; if that
@@ -46,7 +51,7 @@ at `…?jarvis`. Re-run anytime to change the URL or icon.
 From WSL you can launch PowerShell without leaving the terminal:
 
 ```bash
-powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ./windows/Install-JarvisOrb.ps1)" -Url "https://YOUR-JARVIS-URL"
+powershell.exe -ExecutionPolicy Bypass -File "$(wslpath -w ./windows/Install-JarvisOrb.ps1)"
 ```
 
 ## macOS
@@ -57,7 +62,7 @@ Create an app-mode shortcut with Chrome/Edge:
 # one-liner that makes a clickable .command on the Desktop
 cat > ~/Desktop/Jarvis.command <<'EOF'
 #!/bin/bash
-open -na "Google Chrome" --args --app="https://YOUR-JARVIS-URL?jarvis"
+open -na "Google Chrome" --args --app="https://clearroute-jxav-clear-route-5e6bb6db.vercel.app?jarvis"
 EOF
 chmod +x ~/Desktop/Jarvis.command
 ```
@@ -75,7 +80,7 @@ Save as `~/.local/share/applications/jarvis.desktop` (and/or copy to
 Type=Application
 Name=Jarvis
 Comment=Launch the Jarvis assistant orb
-Exec=google-chrome --app=https://YOUR-JARVIS-URL?jarvis
+Exec=google-chrome --app=https://clearroute-jxav-clear-route-5e6bb6db.vercel.app?jarvis
 Icon=utilities-terminal
 Terminal=false
 Categories=Utility;
