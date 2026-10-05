@@ -387,7 +387,7 @@ export default function RouteMap({ route, onClose, onOptimize, canEdit = true })
             <Polyline
               path={getPolylinePath()}
               options={{
-                strokeColor: '#2563eb',
+                strokeColor: '#083068',
                 strokeOpacity: 0.8,
                 strokeWeight: 4
               }}

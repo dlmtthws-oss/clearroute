@@ -219,7 +219,7 @@ export default function Jobs({ user }) {
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="stat-card">
           <p className="stat-label">Total Jobs</p>
-          <p className="stat-value" style={{color: '#3b82f6'}}>{jobs.length}</p>
+          <p className="stat-value" style={{color: '#083068'}}>{jobs.length}</p>
         </div>
         <div className="stat-card">
           <p className="stat-label">Completed</p>
