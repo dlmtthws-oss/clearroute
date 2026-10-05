@@ -28,6 +28,10 @@ select cron.unschedule(jobid) from cron.job where jobname = 'notify-tasks-due';
 -- The reminder digest (production version wrote into the shared notifications table).
 drop function if exists public.generate_task_reminders();
 
--- Jarvis's personal tables (not referenced by the live product).
-drop table if exists public.jarvis_tasks cascade;
-drop table if exists public.jarvis_agent_jobs cascade;
+-- Jarvis's personal tables (not referenced by the live product). Verified
+-- read-only against production: no foreign keys or views point at these, and
+-- generate_task_reminders() (dropped above) is the only function that used
+-- them. No `cascade` on purpose — if something unexpected does depend on them,
+-- Postgres should stop and surface it rather than silently drop it too.
+drop table if exists public.jarvis_tasks;
+drop table if exists public.jarvis_agent_jobs;
