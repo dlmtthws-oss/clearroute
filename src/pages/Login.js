@@ -86,7 +86,7 @@ export default function Login({ onLogin }) {
     <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)'}}>
       <div className="w-full max-w-md p-8" style={{background: 'white', borderRadius: '24px', boxShadow: '0 25px 50px rgba(0,0,0,0.25)'}}>
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center" style={{background: 'linear-gradient(135deg, #3b82f6, #2563eb)', borderRadius: '16px'}}>
+          <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center" style={{background: 'linear-gradient(135deg, #0a3d82 0%, #083068 60%, #08a89a 100%)', borderRadius: '16px'}}>
             <span className="text-3xl">🪟</span>
           </div>
           <h1 className="text-2xl font-bold" style={{color: '#0f172a'}}>ClearRoute</h1>
@@ -100,7 +100,7 @@ export default function Login({ onLogin }) {
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               loginAs === 'admin' ? 'text-white' : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
             }`}
-            style={{background: loginAs === 'admin' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : undefined}}
+            style={{background: loginAs === 'admin' ? 'linear-gradient(135deg, #0a3d82, #083068)' : undefined}}
           >
             Admin / Manager
           </button>
@@ -110,7 +110,7 @@ export default function Login({ onLogin }) {
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               loginAs === 'worker' ? 'text-white' : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
             }`}
-            style={{background: loginAs === 'worker' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : undefined}}
+            style={{background: loginAs === 'worker' ? 'linear-gradient(135deg, #0a3d82, #083068)' : undefined}}
           >
             Field Worker
           </button>
@@ -184,7 +184,7 @@ export default function Login({ onLogin }) {
             <button
               onClick={() => setIsRegister(!isRegister)}
               className="text-sm"
-              style={{color: '#3b82f6'}}
+              style={{color: '#078a7f'}}
             >
               {isRegister ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>

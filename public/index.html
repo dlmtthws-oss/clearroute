@@ -8,8 +8,8 @@
   <link rel="manifest" href="/manifest.json" />
   
   <!-- Theme color -->
-  <meta name="theme-color" content="#2563EB" />
-  
+  <meta name="theme-color" content="#083068" />
+
   <!-- iOS specific -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -18,13 +18,44 @@
   <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
   
   <!-- Microsoft -->
-  <meta name="msapplication-TileColor" content="#2563EB" />
+  <meta name="msapplication-TileColor" content="#083068" />
   <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
   
   <!-- Splash screens for iOS -->
   <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" media="(device-width: 390px) and (-webkit-device-pixel-ratio: 3)" />
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // ClearRoute brand palette. The app themes almost everything through
+    // `blue-*` utility classes, so remap Tailwind's default `blue` scale to the
+    // ClearRoute navy (#083068) and expose `teal` (#08A89A) as the accent — one
+    // change recolours the whole UI on-brand without touching 300+ call sites.
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            blue: {
+              50: '#eef3f9', 100: '#d4e0ee', 200: '#a9c0dc', 300: '#7098c3',
+              400: '#3f6ca3', 500: '#1b4a81', 600: '#083068', 700: '#072a5a',
+              800: '#061f42', 900: '#04162e', 950: '#030e1f',
+            },
+            teal: {
+              50: '#e6f7f5', 100: '#c3ece7', 200: '#8ddbd2', 300: '#4ec6ba',
+              400: '#1fb3a4', 500: '#08a89a', 600: '#078a7f', 700: '#066b63',
+              800: '#054f49', 900: '#043a36',
+            },
+            // The app also uses `indigo-*` as a secondary accent; fold it into
+            // the ClearRoute teal so the whole UI reads as navy + teal.
+            indigo: {
+              50: '#e6f7f5', 100: '#c3ece7', 200: '#8ddbd2', 300: '#4ec6ba',
+              400: '#1fb3a4', 500: '#08a89a', 600: '#078a7f', 700: '#066b63',
+              800: '#054f49', 900: '#043a36',
+            },
+          },
+        },
+      },
+    };
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -34,16 +65,16 @@
     .stat-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
     .nav-item { transition: all 0.2s ease; }
     .nav-item:hover { background: rgba(255,255,255,0.1); }
-    .nav-item.active { background: rgba(59, 130, 246, 0.2); border-left: 3px solid #3b82f6; }
-    .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); transition: all 0.2s ease; }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+    .nav-item.active { background: rgba(8, 168, 154, 0.18); border-left: 3px solid #08A89A; }
+    .btn-primary { background: linear-gradient(135deg, #0a3d82 0%, #083068 100%); transition: all 0.2s ease; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(8, 48, 104, 0.4); }
     .input-field { transition: all 0.2s ease; }
-    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .input-field:focus { border-color: #08A89A; box-shadow: 0 0 0 3px rgba(8, 168, 154, 0.15); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-fade { animation: fadeIn 0.4s ease forwards; }
     .table-row-hover:hover { background-color: #f8fafc; }
     .status-paid { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
-    .status-sent { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+    .status-sent { background: linear-gradient(135deg, #0a3d82 0%, #083068 100%); }
     .status-overdue { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
     .status-draft { background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); }
     

@@ -192,7 +192,7 @@ export default function Workers() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="stat-card">
           <p className="stat-label">Total Workers</p>
-          <p className="stat-value" style={{color: '#3b82f6'}}>{workers.length}</p>
+          <p className="stat-value" style={{color: '#083068'}}>{workers.length}</p>
         </div>
         <div className="stat-card">
           <p className="stat-label">Active</p>

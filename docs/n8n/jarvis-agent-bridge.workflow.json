@@ -1,0 +1,68 @@
+{
+  "name": "Jarvis Agent Bridge",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jarvis-agent",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-jarvis-agent",
+      "name": "Webhook (jarvis-agent)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Jarvis Agent Bridge — verify the signature and route the op to your\n// AI agent service (FastAPI at AGENT_BASE_URL, default host.docker.internal:8001).\n//\n// Optional HMAC verification: set N8N_WEBHOOK_SECRET to the same value as the\n// Supabase secret, and start n8n with NODE_FUNCTION_ALLOW_BUILTIN=crypto so\n// require('crypto') is permitted. If the secret is unset, verification is\n// skipped (fine for local-only testing, NOT for a public tunnel).\nconst item = $input.first().json;\nconst body = item.body || {};\nconst headers = item.headers || {};\nconst secret = $env.N8N_WEBHOOK_SECRET;\n\nif (secret) {\n  const crypto = require('crypto');\n  const ts = headers['x-jarvis-timestamp'];\n  const sig = headers['x-jarvis-signature'];\n  const raw = JSON.stringify(body);\n  const expected = crypto.createHmac('sha256', secret).update(ts + '.' + raw).digest('hex');\n  if (!ts || !sig || sig !== expected) {\n    throw new Error('Invalid Jarvis signature');\n  }\n  // Reject stale requests (older than 5 minutes) to prevent replay.\n  if (Math.abs(Date.now() - Number(ts)) > 5 * 60 * 1000) {\n    throw new Error('Stale Jarvis request');\n  }\n}\n\nconst base = ($env.AGENT_BASE_URL || 'http://host.docker.internal:8001').replace(/\\/$/, '');\nconst op = body.op;\nlet method = 'POST';\nlet url = base;\nlet payload = {};\n\nswitch (op) {\n  case 'process':\n    url = base + '/process';\n    payload = { task: body.task, agent_name: body.agent_name || 'default' };\n    break;\n  case 'coordinate':\n    url = base + '/coordinate';\n    payload = { task: body.task, agents: body.agents || [] };\n    break;\n  case 'create_agent':\n    url = base + '/agents';\n    payload = { name: body.name, role: body.role, tools: body.tools || [] };\n    break;\n  case 'list_agents':\n    method = 'GET';\n    url = base + '/agents';\n    break;\n  case 'list_tools':\n    method = 'GET';\n    url = base + '/tools';\n    break;\n  case 'execute_tool':\n    url = base + '/tools/execute';\n    payload = { tool: body.tool, params: body.params || {} };\n    break;\n  default:\n    throw new Error('Unknown op: ' + op);\n}\n\nreturn [{ json: { method, url, payload } }];"
+      },
+      "id": "route-and-verify",
+      "name": "Verify & Route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "={{ $json.method }}",
+        "url": "={{ $json.url }}",
+        "sendBody": "={{ $json.method !== 'GET' }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": {}
+      },
+      "id": "call-agent",
+      "name": "Call Agent API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond to Jarvis",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 300]
+    }
+  ],
+  "connections": {
+    "Webhook (jarvis-agent)": {
+      "main": [[{ "node": "Verify & Route", "type": "main", "index": 0 }]]
+    },
+    "Verify & Route": {
+      "main": [[{ "node": "Call Agent API", "type": "main", "index": 0 }]]
+    },
+    "Call Agent API": {
+      "main": [[{ "node": "Respond to Jarvis", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "active": false
+}
