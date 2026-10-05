@@ -74,6 +74,12 @@ $shortcut.TargetPath       = $browser
 $shortcut.Arguments        = $arguments
 $shortcut.WorkingDirectory = Split-Path $browser
 $shortcut.Description       = "Launch the Jarvis assistant orb"
+# Default to the bundled orb icon (jarvis.ico beside this script) unless the
+# caller passed their own -IconPath.
+if (-not $IconPath) {
+    $bundledIcon = Join-Path $PSScriptRoot "jarvis.ico"
+    if (Test-Path $bundledIcon) { $IconPath = $bundledIcon }
+}
 if ($IconPath -and (Test-Path $IconPath)) {
     $shortcut.IconLocation = $IconPath
 } else {
@@ -85,8 +91,6 @@ Write-Host "Created shortcut:" -ForegroundColor Green
 Write-Host "  $lnkPath"
 Write-Host "  browser : $browser"
 Write-Host "  opens   : $launchUrl"
-if (-not $IconPath) {
-    Write-Host "  (no -IconPath given; used the browser icon. Pass -IconPath to use a custom .ico.)" -ForegroundColor DarkGray
-}
+Write-Host "  icon    : $(if ($IconPath) { $IconPath } else { "$browser (browser default)" })"
 Write-Host ""
 Write-Host "Double-click '$Name' on your Desktop to open the orb. Sign in once and it stays signed in." -ForegroundColor Cyan
